@@ -72,13 +72,18 @@ def getShoppingList(chatid):
                 chatid = %s
             ORDER BY item"""
     conn = None
-    # result = ''
+    result = []
     try:
         conn = dbConnection(conn)
         cur = conn.cursor()
-        
-        result = cur.execute(sql, (str(chatid)))
-        print(result)
+        cur.execute(sql, [str(chatid)])
+        row = cur.fetchone()
+
+        while row is not None:
+            print(row)
+            result.append(row)
+            row = cur.fetchone()
+
         cur.close()
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -86,10 +91,28 @@ def getShoppingList(chatid):
     finally:
         if conn is not None:
             conn.close()
-
+    
+    return result
 
 def emptyShoppingList(chatid):
-    print('TODO')
+    sql = """DELETE FROM
+                groceries
+            WHERE
+                chatid = %s"""
+    conn = None
+    result = []
+    try:
+        conn = dbConnection(conn)
+        cur = conn.cursor()
+        cur.execute(sql, [str(chatid)])
+
+        cur.close()
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
 
 # Shoud add the new item to the db, table based on the chat id
 @food_bot.message_handler(commands=['newItem'])
@@ -120,8 +143,20 @@ def add_new(message):
 def getItems(message):
     chatid = message.chat.id
     shoppingList = getShoppingList(chatid)
-    #print(shoppingList)
+    print(shoppingList)
 
+    text = 'Kauppalista: \n'
+    for item in shoppingList:
+        text = text + item[0] + " x" + str(item[1]) + "\n"
+
+    food_bot.send_message(chatid, text)
+
+@food_bot.message_handler(commands=['clear'])
+def clearList(message):
+    chatid = message.chat.id
+    emptyShoppingList(chatid)
+    text = "Kauppalista tyhjennetty"
+    food_bot.send_message(chatid, text)
 
 # SHOULD BE END OF THE FILE BECAUSE OF THE PYTHON 
 # food_bot.set_update_listener(listener) #register listener
