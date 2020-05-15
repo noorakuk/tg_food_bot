@@ -1,10 +1,11 @@
 # Importing stuff
 import telebot
 import psycopg2
-import configfile as config
+from configfile import * 
+config = Config()
 
 TOKEN  = config.TOKEN
-food_bot = telebot.TeleBot(token=TOKEN)
+food_bot = telebot.TeleBot(TOKEN)
 
 creationQuery = """
     CREATE TABLE IF NOT EXISTS groceries (
@@ -115,7 +116,7 @@ def emptyShoppingList(chatid):
             conn.close()
 
 # Shoud add the new item to the db, table based on the chat id
-@food_bot.message_handler(commands=['newItem'])
+@food_bot.message_handler(commands=['add'])
 def add_new(message):
     chatid = message.chat.id
     words = message.text.split()
@@ -139,7 +140,7 @@ def add_new(message):
         text = """Ensimmäinen sana on tuote, joka lisätään kauppalistaan. Jos haluat lisätä tuotteiden määrän, voit laittaa sen toiseksi parametriksi."""
         food_bot.send_message(chatid, text)
 
-@food_bot.message_handler(commands=['getList'])
+@food_bot.message_handler(commands=['list'])
 def getItems(message):
     chatid = message.chat.id
     shoppingList = getShoppingList(chatid)
